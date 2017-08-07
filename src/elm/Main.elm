@@ -45,7 +45,7 @@ type WidgetType
 type alias Widget =
     { name : WidgetType
     , active : Bool
-    , data : Result String (List WidgetListItem)
+    , data : Result Http.Error (List WidgetListItem)
     }
 
 
@@ -149,16 +149,30 @@ update msg model =
                 ( { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }, Cmd.none )
 
         LoadWidgetData accountName ->
-            -- SEND MULTIPLY MESSAGES -> MAP ALL ACTIVE WIDGETS
-            -- let
-            --
-            --   reqAccount = makeRequest accountName
-            --
-            -- in
-            ( model, Cmd.none )
+            let
+                account =
+                    model.accounts
+                        |> List.filter (\acc -> acc.name == accountName)
+                        |> List.head
 
-        SetWidgetData accountName widgetName (Ok list) ->
-            ( model, Cmd.none )
+                msgs =
+                    case account of
+                        Just acc ->
+                            acc.widgets
+                                |> List.filter (\a -> a.active)
+                                |> List.map (\a -> makeRequest acc.auth accountName a.name)
+
+                        _ ->
+                            [ Cmd.none ]
+            in
+                ( model, Cmd.batch msgs )
+
+        SetWidgetData accountName widgetName list ->
+            let
+                localUpdateWidgets =
+                    updateWidgetData list widgetName
+            in
+                ( { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -202,6 +216,22 @@ toggleWidget widgetName account =
         { account | widgets = newWidgets }
 
 
+updateWidgetData : Result Http.Error (List WidgetListItem) -> WidgetType -> Account -> Account
+updateWidgetData data widgetName account =
+    let
+        newWidgets =
+            List.map
+                (\widget ->
+                    if widget.name == widgetName then
+                        { widget | data = data }
+                    else
+                        widget
+                )
+                account.widgets
+    in
+        { account | widgets = newWidgets }
+
+
 
 -- SUBSCRIBTION
 
@@ -225,7 +255,17 @@ view model =
 
 viewAccounts : List Account -> Html Msg
 viewAccounts accoutns =
-    div [ class "account-list" ] (List.map viewAccount accoutns)
+    div []
+        [ div [ class "account-list" ]
+            (List.map viewAccount accoutns)
+        , div
+            [ class "widget-list" ]
+            (accoutns
+                |> List.filter (\a -> a.active)
+                |> List.concatMap (\a -> List.filter (\b -> b.active) a.widgets)
+                |> List.map viewWidget
+            )
+        ]
 
 
 viewAccount : Account -> Html Msg
@@ -275,6 +315,27 @@ toggleButton msg active =
         ]
 
 
+viewWidget : Widget -> Html Msg
+viewWidget { name, data } =
+    div [ class "widget" ]
+        [ h3 [ class "widget__title" ] [ text <| toString name ]
+        , case data of
+            Ok list ->
+                ul []
+                    (list
+                        |> List.map
+                            (\item ->
+                                li []
+                                    [ a [ href item.url ] [ text item.title ]
+                                    ]
+                            )
+                    )
+
+            _ ->
+                div [ class "alert alert--error" ] [ text "ERROR" ]
+        ]
+
+
 
 --
 
@@ -293,14 +354,22 @@ makeRequest auth accountName widget =
                 _ ->
                     ""
 
-        ( url, decoder, msg ) =
+        msg =
+            SetWidgetData accountName widget
+
+        ( url, decoder ) =
             case widget of
+                GitHubRepos ->
+                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/github/" ++ id ++ "/repos", mediumDecoder )
+
+                MedimPosts ->
+                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/medium/" ++ id ++ "/latest", mediumDecoder )
+
+                MediumRecommended ->
+                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/medium/" ++ id ++ "/has-recommended", mediumDecoder )
+
                 _ ->
-                    let
-                        msg =
-                            SetWidgetData accountName widget
-                    in
-                        ( "https://medium.com/@" ++ id ++ "/latest?format=json", mediumDecoder, msg )
+                    ( "http://google.com", mediumDecoder )
 
         req =
             Http.request
@@ -325,4 +394,4 @@ mediumItemDecoder : Decode.Decoder WidgetListItem
 mediumItemDecoder =
     decode WidgetListItem
         |> Json.Decode.Pipeline.required "title" Decode.string
-        |> Json.Decode.Pipeline.required "uniqueSlug" Decode.string
+        |> Json.Decode.Pipeline.required "url" Decode.string

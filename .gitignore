@@ -3,4 +3,5 @@ node_modules/
 tmp/
 dist/
 yarn.lock
-
+functions/config.json
+firebase-debug.log
