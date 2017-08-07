@@ -3,6 +3,9 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
+import Http
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (decode, required)
 
 
 -- APP
@@ -10,7 +13,13 @@ import Html.Events exposing (onClick, onInput)
 
 main : Program Never Model Msg
 main =
-    Html.beginnerProgram { model = model, view = view, update = update }
+    Html.program { init = init, view = view, update = update, subscriptions = subscriptions }
+
+
+type alias WidgetListItem =
+    { title : String
+    , url : String
+    }
 
 
 type AccountType
@@ -36,6 +45,7 @@ type WidgetType
 type alias Widget =
     { name : WidgetType
     , active : Bool
+    , data : Result String (List WidgetListItem)
     }
 
 
@@ -71,6 +81,7 @@ model =
           , widgets =
                 [ { name = GitHubRepos
                   , active = True
+                  , data = Ok []
                   }
                 ]
           }
@@ -81,9 +92,11 @@ model =
           , widgets =
                 [ { name = MedimPosts
                   , active = True
+                  , data = Ok []
                   }
                 , { name = MediumRecommended
                   , active = False
+                  , data = Ok []
                   }
                 ]
           }
@@ -97,6 +110,11 @@ model =
     }
 
 
+init : ( Model, Cmd Msg )
+init =
+    ( model, Cmd.none )
+
+
 
 -- UPDATE
 
@@ -106,30 +124,44 @@ type Msg
     | ToggleAccount AccountType
     | ChangeUserName AccountType String
     | ToggleWidget AccountType WidgetType
+    | LoadWidgetData AccountType
+    | SetWidgetData AccountType WidgetType (Result Http.Error (List WidgetListItem))
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ToggleAccount accountName ->
-            { model | accounts = findAndUpdateAccount model.accounts accountName toogleAccount }
+            ( { model | accounts = findAndUpdateAccount model.accounts accountName toogleAccount }, Cmd.none )
 
         ChangeUserName accountName input ->
             let
                 localChangeInput =
                     changeUserName input
             in
-                { model | accounts = findAndUpdateAccount model.accounts accountName localChangeInput }
+                ( { model | accounts = findAndUpdateAccount model.accounts accountName localChangeInput }, Cmd.none )
 
         ToggleWidget accountName widgetName ->
             let
                 localUpdateWidgets =
                     toggleWidget widgetName
             in
-                { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }
+                ( { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }, Cmd.none )
+
+        LoadWidgetData accountName ->
+            -- SEND MULTIPLY MESSAGES -> MAP ALL ACTIVE WIDGETS
+            -- let
+            --
+            --   reqAccount = makeRequest accountName
+            --
+            -- in
+            ( model, Cmd.none )
+
+        SetWidgetData accountName widgetName (Ok list) ->
+            ( model, Cmd.none )
 
         _ ->
-            model
+            ( model, Cmd.none )
 
 
 findAndUpdateAccount : List Account -> AccountType -> (Account -> Account) -> List Account
@@ -171,6 +203,16 @@ toggleWidget widgetName account =
 
 
 
+-- SUBSCRIBTION
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.none ]
+
+
+
 -- VIEW
 
 
@@ -202,6 +244,7 @@ viewAccount { name, active, auth, widgets } =
                 _ ->
                     text "No Implemented yet"
             , ul [] (viewAccountWidgetsList name widgets)
+            , button [ onClick (LoadWidgetData name) ] [ text "Load data" ]
             , hr [] []
             ]
 
@@ -230,3 +273,56 @@ toggleButton msg active =
             else
                 "Activate"
         ]
+
+
+
+--
+
+
+makeRequest : Auth -> AccountType -> WidgetType -> Cmd Msg
+makeRequest auth accountName widget =
+    let
+        id =
+            case auth of
+                Username name ->
+                    name
+
+                Token (Just token) ->
+                    token
+
+                _ ->
+                    ""
+
+        ( url, decoder, msg ) =
+            case widget of
+                _ ->
+                    let
+                        msg =
+                            SetWidgetData accountName widget
+                    in
+                        ( "https://medium.com/@" ++ id ++ "/latest?format=json", mediumDecoder, msg )
+
+        req =
+            Http.request
+                { method = "GET"
+                , body = Http.emptyBody
+                , url = url
+                , expect = Http.expectJson decoder
+                , headers = []
+                , timeout = Nothing
+                , withCredentials = False
+                }
+    in
+        Http.send msg req
+
+
+mediumDecoder : Decode.Decoder (List WidgetListItem)
+mediumDecoder =
+    Decode.list mediumItemDecoder
+
+
+mediumItemDecoder : Decode.Decoder WidgetListItem
+mediumItemDecoder =
+    decode WidgetListItem
+        |> Json.Decode.Pipeline.required "title" Decode.string
+        |> Json.Decode.Pipeline.required "uniqueSlug" Decode.string
