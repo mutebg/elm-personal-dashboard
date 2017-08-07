@@ -85,6 +85,17 @@ model =
                   }
                 ]
           }
+        , { name = Twitter
+          , active = True
+          , auth = Username "mutebg"
+          , url = Nothing
+          , widgets =
+                [ { name = TwitterPosts
+                  , active = True
+                  , data = Ok []
+                  }
+                ]
+          }
         , { name = Medium
           , active = True
           , auth = Username "mutebg"
@@ -357,16 +368,22 @@ makeRequest auth accountName widget =
         msg =
             SetWidgetData accountName widget
 
+        baseUrl =
+            "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
+
         ( url, decoder ) =
             case widget of
                 GitHubRepos ->
-                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/github/" ++ id ++ "/repos", mediumDecoder )
+                    ( baseUrl ++ "github/" ++ id ++ "/repos", mediumDecoder )
+
+                TwitterPosts ->
+                    ( baseUrl ++ "twitter/" ++ id, mediumDecoder )
 
                 MedimPosts ->
-                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/medium/" ++ id ++ "/latest", mediumDecoder )
+                    ( baseUrl ++ "medium/" ++ id ++ "/latest", mediumDecoder )
 
                 MediumRecommended ->
-                    ( "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/medium/" ++ id ++ "/has-recommended", mediumDecoder )
+                    ( baseUrl ++ "medium/" ++ id ++ "/has-recommended", mediumDecoder )
 
                 _ ->
                     ( "http://google.com", mediumDecoder )

@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const request = require("request-promise");
 const { map } = require("lodash");
+const Twitter = require("twitter");
+
 const localConfig = require("./config.json");
 
 admin.initializeApp(functions.config().firebase);
@@ -49,6 +51,30 @@ app.get("/github/:user/:type", (req, res) => {
       }))
     );
   });
+});
+
+app.get("/twitter/:user", (req, res) => {
+  const client = new Twitter({
+    consumer_key: config.twitter.key,
+    consumer_secret: config.twitter.secret,
+    access_token_key: "",
+    access_token_secret: ""
+  });
+
+  const user = req.params.user;
+
+  client.get(
+    "statuses/user_timeline",
+    { screen_name: user, count: 10 },
+    (error, tweets, response) => {
+      res.status(201).json(
+        tweets.map(t => ({
+          title: t.text,
+          url: `https://twitter.com/${user}/status/${t.id_str}`
+        }))
+      );
+    }
+  );
 });
 
 // Expose the API as a function
