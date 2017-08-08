@@ -40,6 +40,10 @@ type WidgetType
     | LastFMTrackChart
     | TwitterPosts
     | InstagramPosts
+    | LastFMgetRecentTracks
+    | LastFMgetWeeklyTrackChart
+    | LastFMgetWeeklyAlbumChart
+    | LastFMgetWeeklyArtistChart
 
 
 type alias Widget =
@@ -106,6 +110,29 @@ model =
                   , data = Ok []
                   }
                 , { name = MediumRecommended
+                  , active = False
+                  , data = Ok []
+                  }
+                ]
+          }
+        , { name = LastFM
+          , active = True
+          , auth = Username "mutebg"
+          , url = Nothing
+          , widgets =
+                [ { name = LastFMgetRecentTracks
+                  , active = True
+                  , data = Ok []
+                  }
+                , { name = LastFMgetWeeklyTrackChart
+                  , active = False
+                  , data = Ok []
+                  }
+                , { name = LastFMgetWeeklyAlbumChart
+                  , active = False
+                  , data = Ok []
+                  }
+                , { name = LastFMgetWeeklyArtistChart
                   , active = False
                   , data = Ok []
                   }
@@ -384,6 +411,18 @@ makeRequest auth accountName widget =
 
                 MediumRecommended ->
                     ( baseUrl ++ "medium/" ++ id ++ "/has-recommended", mediumDecoder )
+
+                LastFMgetRecentTracks ->
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getRecentTracks", mediumDecoder )
+
+                LastFMgetWeeklyTrackChart ->
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyTrackChart", mediumDecoder )
+
+                LastFMgetWeeklyAlbumChart ->
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyAlbumChart", mediumDecoder )
+
+                LastFMgetWeeklyArtistChart ->
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyArtistChart", mediumDecoder )
 
                 _ ->
                     ( "http://google.com", mediumDecoder )

@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
 const request = require("request-promise");
-const { map } = require("lodash");
+const { map, get } = require("lodash");
 const Twitter = require("twitter");
 
 const localConfig = require("./config.json");
@@ -34,7 +34,6 @@ app.get("/medium/:user/:type", (req, res) => {
 });
 
 app.get("/github/:user/:type", (req, res) => {
-  console.log(config);
   const token = config.github.token;
   request({
     json: true,
@@ -75,6 +74,46 @@ app.get("/twitter/:user", (req, res) => {
       );
     }
   );
+});
+
+app.get("/lastfm/:user/:type", (req, res) => {
+  const url = `http://ws.audioscrobbler.com/2.0/?method=user.${req.params
+    .type}&user=${req.params.user}&api_key=${config.lastfm.apikey}&format=json`;
+
+  let key = [];
+  let fn = track => ({
+    title: track.artist["#text"] + " - " + track.name,
+    url: track.url
+  });
+  switch (req.params.type) {
+    case "getRecentTracks":
+      key = ["recenttracks", "track"];
+      break;
+    case "getWeeklyTrackChart":
+      key = ["weeklytrackchart", "track"];
+      break;
+    case "getWeeklyAlbumChart":
+      key = ["weeklyalbumchart", "album"];
+      break;
+    case "getWeeklyArtistChart":
+      key = ["weeklyartistchart", "artist"];
+      fn = artist => ({
+        title: artist.name,
+        url: artist.url
+      });
+      break;
+  }
+
+  const token = config.github.token;
+  request({
+    json: true,
+    headers: {
+      "User-Agent": "Request-Promise"
+    },
+    uri: url
+  }).then(response => {
+    res.status(201).json(get(response, key).map(fn));
+  });
 });
 
 // Expose the API as a function
