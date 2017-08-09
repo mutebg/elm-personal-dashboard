@@ -30,6 +30,7 @@ type AccountType
     | LastFM
     | Twitter
     | Instagram
+    | SetlistFM
 
 
 type WidgetType
@@ -46,6 +47,7 @@ type WidgetType
     | LastFMgetWeeklyTrackChart
     | LastFMgetWeeklyAlbumChart
     | LastFMgetWeeklyArtistChart
+    | SetlistFMattended
 
 
 type alias Widget =
@@ -97,6 +99,17 @@ model =
           , url = Nothing
           , widgets =
                 [ { name = InstagramPosts
+                  , active = True
+                  , data = Ok []
+                  }
+                ]
+          }
+        , { name = SetlistFM
+          , active = True
+          , auth = Username "fb:1243029572"
+          , url = Nothing
+          , widgets =
+                [ { name = SetlistFMattended
                   , active = True
                   , data = Ok []
                   }
@@ -422,6 +435,9 @@ makeRequest auth accountName widget =
 
                 InstagramPosts ->
                     ( baseUrl ++ "instagram/" ++ id ++ "/recent", standartDecoder )
+
+                SetlistFMattended ->
+                    ( baseUrl ++ "setlistfm/" ++ id, standartDecoder )
 
                 TwitterPosts ->
                     ( baseUrl ++ "twitter/" ++ id ++ "/list", standartDecoder )
