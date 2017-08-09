@@ -5,7 +5,6 @@ const cors = require("cors");
 const request = require("request-promise");
 const { map, get } = require("lodash");
 const Twitter = require("twitter");
-const parseString = require("xml2js").parseString;
 
 const localConfig = require("./config.json");
 
@@ -138,16 +137,6 @@ app.get("/instagram/:user/:type", (req, res) => {
         image_url: ig.images.low_resolution.url
       }))
     );
-  });
-});
-
-app.get("/goodreads/:user", (req, res) => {
-  request(
-    `https://www.goodreads.com/user/show/63935343?key=${config.goodreads.key}`
-  ).then(data => {
-    parseString(data, (err, result) => {
-      res.status(201).json(result);
-    });
   });
 });
 
