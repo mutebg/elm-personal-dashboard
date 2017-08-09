@@ -126,15 +126,30 @@ app.get("/lastfm/:user/:type", (req, res) => {
   });
 });
 
-// app.get("/goodreads/:user", (req, res) => {
-//   request(
-//     `https://www.goodreads.com/user/show/63935343?key=${config.goodreads.key}`
-//   ).then(data => {
-//     parseString(data, (err, result) => {
-//       res.status(201).json(result);
-//     });
-//   });
-// });
+app.get("/instagram/:user/:type", (req, res) => {
+  request({
+    json: true,
+    uri: `https://igpi.ga/${req.params.user}/media/?count=10`
+  }).then(response => {
+    res.status(201).json(
+      response.items.map(ig => ({
+        title: ig.caption ? ig.caption.text : "",
+        url: ig.link,
+        image_url: ig.images.low_resolution.url
+      }))
+    );
+  });
+});
+
+app.get("/goodreads/:user", (req, res) => {
+  request(
+    `https://www.goodreads.com/user/show/63935343?key=${config.goodreads.key}`
+  ).then(data => {
+    parseString(data, (err, result) => {
+      res.status(201).json(result);
+    });
+  });
+});
 
 // Expose the API as a function
 exports.api = functions.https.onRequest(app);
