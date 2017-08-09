@@ -5,7 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
-import Json.Decode.Pipeline exposing (decode, required)
+import Json.Decode.Pipeline as DecodePipe
 
 
 -- APP
@@ -19,6 +19,7 @@ main =
 type alias WidgetListItem =
     { title : String
     , url : String
+    , image_url : Maybe String
     }
 
 
@@ -29,6 +30,7 @@ type AccountType
     | LastFM
     | Twitter
     | Instagram
+    | SetlistFM
 
 
 type WidgetType
@@ -45,6 +47,7 @@ type WidgetType
     | LastFMgetWeeklyTrackChart
     | LastFMgetWeeklyAlbumChart
     | LastFMgetWeeklyArtistChart
+    | SetlistFMattended
 
 
 type alias Widget =
@@ -85,6 +88,28 @@ model =
           , url = Nothing
           , widgets =
                 [ { name = GitHubRepos
+                  , active = True
+                  , data = Ok []
+                  }
+                ]
+          }
+        , { name = Instagram
+          , active = True
+          , auth = Username "mutebg"
+          , url = Nothing
+          , widgets =
+                [ { name = InstagramPosts
+                  , active = True
+                  , data = Ok []
+                  }
+                ]
+          }
+        , { name = SetlistFM
+          , active = True
+          , auth = Username "fb:1243029572"
+          , url = Nothing
+          , widgets =
+                [ { name = SetlistFMattended
                   , active = True
                   , data = Ok []
                   }
@@ -408,6 +433,12 @@ makeRequest auth accountName widget =
                 GitHubRepos ->
                     ( baseUrl ++ "github/" ++ id ++ "/repos", standartDecoder )
 
+                InstagramPosts ->
+                    ( baseUrl ++ "instagram/" ++ id ++ "/recent", standartDecoder )
+
+                SetlistFMattended ->
+                    ( baseUrl ++ "setlistfm/" ++ id, standartDecoder )
+
                 TwitterPosts ->
                     ( baseUrl ++ "twitter/" ++ id ++ "/list", standartDecoder )
 
@@ -456,6 +487,7 @@ standartDecoder =
 
 standarItemDecoder : Decode.Decoder WidgetListItem
 standarItemDecoder =
-    decode WidgetListItem
-        |> Json.Decode.Pipeline.required "title" Decode.string
-        |> Json.Decode.Pipeline.required "url" Decode.string
+    DecodePipe.decode WidgetListItem
+        |> DecodePipe.required "title" Decode.string
+        |> DecodePipe.required "url" Decode.string
+        |> DecodePipe.optional "image_url" (Decode.nullable Decode.string) Nothing

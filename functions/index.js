@@ -5,7 +5,6 @@ const cors = require("cors");
 const request = require("request-promise");
 const { map, get } = require("lodash");
 const Twitter = require("twitter");
-const parseString = require("xml2js").parseString;
 
 const localConfig = require("./config.json");
 
@@ -126,15 +125,38 @@ app.get("/lastfm/:user/:type", (req, res) => {
   });
 });
 
-// app.get("/goodreads/:user", (req, res) => {
-//   request(
-//     `https://www.goodreads.com/user/show/63935343?key=${config.goodreads.key}`
-//   ).then(data => {
-//     parseString(data, (err, result) => {
-//       res.status(201).json(result);
-//     });
-//   });
-// });
+app.get("/instagram/:user/:type", (req, res) => {
+  request({
+    json: true,
+    uri: `https://igpi.ga/${req.params.user}/media/?count=10`
+  }).then(response => {
+    res.status(201).json(
+      response.items.map(ig => ({
+        title: ig.caption ? ig.caption.text : "",
+        url: ig.link,
+        image_url: ig.images.low_resolution.url
+      }))
+    );
+  });
+});
+
+app.get("/setlistfm/:user", (req, res) => {
+  request({
+    json: true,
+    uri: `https://api.setlist.fm/rest/1.0/user/${req.params.user}/attended`,
+    headers: {
+      Accept: "application/json",
+      "x-api-key": "86874426-b5a7-457b-8151-52d3da4e36f1"
+    }
+  }).then(response => {
+    res.status(201).json(
+      response.setlist.slice(10).map(i => ({
+        title: i.artist.name + " @ " + i.venue.name + " / " + i.eventDate,
+        url: i.url
+      }))
+    );
+  });
+});
 
 // Expose the API as a function
 exports.api = functions.https.onRequest(app);
