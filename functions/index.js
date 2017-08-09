@@ -5,6 +5,7 @@ const cors = require("cors");
 const request = require("request-promise");
 const { map, get } = require("lodash");
 const Twitter = require("twitter");
+const parseString = require("xml2js").parseString;
 
 const localConfig = require("./config.json");
 
@@ -44,15 +45,17 @@ app.get("/github/:user/:type", (req, res) => {
       .user}/repos?sort=pushed&access_token=${token}`
   }).then(response => {
     res.status(201).json(
-      response.map(repo => ({
-        title: repo.full_name,
-        url: repo.html_url
-      }))
+      response
+        .map(repo => ({
+          title: repo.full_name,
+          url: repo.html_url
+        }))
+        .slice(0, 10)
     );
   });
 });
 
-app.get("/twitter/:user", (req, res) => {
+app.get("/twitter/:user/:type", (req, res) => {
   const client = new Twitter({
     consumer_key: config.twitter.key,
     consumer_secret: config.twitter.secret,
@@ -62,15 +65,22 @@ app.get("/twitter/:user", (req, res) => {
 
   const user = req.params.user;
 
+  const type =
+    req.params.type == "favorites"
+      ? "favorites/list"
+      : "statuses/user_timeline";
+
   client.get(
-    "statuses/user_timeline",
+    type,
     { screen_name: user, count: 10 },
     (error, tweets, response) => {
       res.status(201).json(
-        tweets.map(t => ({
-          title: t.text,
-          url: `https://twitter.com/${user}/status/${t.id_str}`
-        }))
+        tweets
+          .map(t => ({
+            title: t.text,
+            url: `https://twitter.com/${t.user.screen_name}/status/${t.id_str}`
+          }))
+          .slice(0, 10)
       );
     }
   );
@@ -112,9 +122,19 @@ app.get("/lastfm/:user/:type", (req, res) => {
     },
     uri: url
   }).then(response => {
-    res.status(201).json(get(response, key).map(fn));
+    res.status(201).json(get(response, key).map(fn).slice(0, 10));
   });
 });
+
+// app.get("/goodreads/:user", (req, res) => {
+//   request(
+//     `https://www.goodreads.com/user/show/63935343?key=${config.goodreads.key}`
+//   ).then(data => {
+//     parseString(data, (err, result) => {
+//       res.status(201).json(result);
+//     });
+//   });
+// });
 
 // Expose the API as a function
 exports.api = functions.https.onRequest(app);

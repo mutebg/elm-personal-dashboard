@@ -39,6 +39,7 @@ type WidgetType
     | LastFMArtistChart
     | LastFMTrackChart
     | TwitterPosts
+    | TwitterSaves
     | InstagramPosts
     | LastFMgetRecentTracks
     | LastFMgetWeeklyTrackChart
@@ -98,6 +99,10 @@ model =
                   , active = True
                   , data = Ok []
                   }
+                , { name = TwitterSaves
+                  , active = True
+                  , data = Ok []
+                  }
                 ]
           }
         , { name = Medium
@@ -110,7 +115,7 @@ model =
                   , data = Ok []
                   }
                 , { name = MediumRecommended
-                  , active = False
+                  , active = True
                   , data = Ok []
                   }
                 ]
@@ -125,15 +130,15 @@ model =
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyTrackChart
-                  , active = False
+                  , active = True
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyAlbumChart
-                  , active = False
+                  , active = True
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyArtistChart
-                  , active = False
+                  , active = True
                   , data = Ok []
                   }
                 ]
@@ -401,31 +406,34 @@ makeRequest auth accountName widget =
         ( url, decoder ) =
             case widget of
                 GitHubRepos ->
-                    ( baseUrl ++ "github/" ++ id ++ "/repos", mediumDecoder )
+                    ( baseUrl ++ "github/" ++ id ++ "/repos", standartDecoder )
 
                 TwitterPosts ->
-                    ( baseUrl ++ "twitter/" ++ id, mediumDecoder )
+                    ( baseUrl ++ "twitter/" ++ id ++ "/list", standartDecoder )
+
+                TwitterSaves ->
+                    ( baseUrl ++ "twitter/" ++ id ++ "/favorites", standartDecoder )
 
                 MedimPosts ->
-                    ( baseUrl ++ "medium/" ++ id ++ "/latest", mediumDecoder )
+                    ( baseUrl ++ "medium/" ++ id ++ "/latest", standartDecoder )
 
                 MediumRecommended ->
-                    ( baseUrl ++ "medium/" ++ id ++ "/has-recommended", mediumDecoder )
+                    ( baseUrl ++ "medium/" ++ id ++ "/has-recommended", standartDecoder )
 
                 LastFMgetRecentTracks ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getRecentTracks", mediumDecoder )
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getRecentTracks", standartDecoder )
 
                 LastFMgetWeeklyTrackChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyTrackChart", mediumDecoder )
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyTrackChart", standartDecoder )
 
                 LastFMgetWeeklyAlbumChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyAlbumChart", mediumDecoder )
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyAlbumChart", standartDecoder )
 
                 LastFMgetWeeklyArtistChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyArtistChart", mediumDecoder )
+                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyArtistChart", standartDecoder )
 
                 _ ->
-                    ( "http://google.com", mediumDecoder )
+                    ( "http://google.com", standartDecoder )
 
         req =
             Http.request
@@ -441,13 +449,13 @@ makeRequest auth accountName widget =
         Http.send msg req
 
 
-mediumDecoder : Decode.Decoder (List WidgetListItem)
-mediumDecoder =
-    Decode.list mediumItemDecoder
+standartDecoder : Decode.Decoder (List WidgetListItem)
+standartDecoder =
+    Decode.list standarItemDecoder
 
 
-mediumItemDecoder : Decode.Decoder WidgetListItem
-mediumItemDecoder =
+standarItemDecoder : Decode.Decoder WidgetListItem
+standarItemDecoder =
     decode WidgetListItem
         |> Json.Decode.Pipeline.required "title" Decode.string
         |> Json.Decode.Pipeline.required "url" Decode.string
