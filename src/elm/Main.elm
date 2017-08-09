@@ -76,7 +76,9 @@ type alias Account =
 
 
 type alias Model =
-    { accounts : List Account }
+    { accounts : List Account
+    , name : String
+    }
 
 
 model : Model
@@ -175,12 +177,13 @@ model =
           , widgets = []
           }
         ]
+    , name = "Stoyan Delev"
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( model, Cmd.none )
+    ( model, loadAllWidgetData model )
 
 
 
@@ -192,6 +195,7 @@ type Msg
     | ToggleAccount AccountType
     | ChangeUserName AccountType String
     | ToggleWidget AccountType WidgetType
+    | LoadAllWidgetData
     | LoadWidgetData AccountType
     | SetWidgetData AccountType WidgetType (Result Http.Error (List WidgetListItem))
 
@@ -215,6 +219,13 @@ update msg model =
                     toggleWidget widgetName
             in
                 ( { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }, Cmd.none )
+
+        LoadAllWidgetData ->
+            let
+                msgs =
+                    loadAllWidgetData model
+            in
+                ( model, msgs )
 
         LoadWidgetData accountName ->
             let
@@ -300,6 +311,24 @@ updateWidgetData data widgetName account =
         { account | widgets = newWidgets }
 
 
+loadAllWidgetData : Model -> Cmd Msg
+loadAllWidgetData model =
+    let
+        accounts =
+            model.accounts
+                |> List.filter (\acc -> acc.active)
+                |> List.map (\acc -> { acc | widgets = List.filter (\b -> b.active) acc.widgets })
+
+        msgs =
+            accounts
+                |> List.concatMap
+                    (\acc ->
+                        List.map (\widget -> makeRequest acc.auth acc.name widget.name) acc.widgets
+                    )
+    in
+        Cmd.batch msgs
+
+
 
 -- SUBSCRIBTION
 
@@ -315,9 +344,13 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view model =
+view { accounts, name } =
     div []
-        [ viewAccounts model.accounts
+        [ div [ class "header" ]
+            [ h1 [] [ text name ]
+            , button [ onClick LoadAllWidgetData ] [ text "reaload all" ]
+            ]
+        , viewAccounts accounts
         ]
 
 
