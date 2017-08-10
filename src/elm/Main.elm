@@ -374,19 +374,28 @@ viewAccount { name, active, auth, widgets } =
     let
         onInputChange =
             ChangeUserName name
-    in
-        div []
-            [ h2 [] [ text <| toString name ]
-            , toggleButton (ToggleAccount name) active
-            , case auth of
-                Username name ->
-                    input [ value name, onInput onInputChange ] []
 
-                _ ->
-                    text "No Implemented yet"
-            , ul [] (viewAccountWidgetsList name widgets)
-            , button [ onClick (LoadWidgetData name) ] [ text "Load data" ]
-            , hr [] []
+        activeClass =
+            if active then
+                " account-box--active"
+            else
+                ""
+    in
+        div [ class ("account-box" ++ activeClass) ]
+            [ div [ class "account-box__header" ]
+                [ h2 [ class "account-box__title" ] [ text <| toString name ]
+                , toggleButton (ToggleAccount name) active
+                ]
+            , div [ class "account-box__content" ]
+                [ case auth of
+                    Username name ->
+                        input [ class "account-box__input", value name, onInput onInputChange ] []
+
+                    _ ->
+                        text "No Implemented yet"
+                , ul [ class "account-box__list" ] (viewAccountWidgetsList name widgets)
+                , button [ onClick (LoadWidgetData name) ] [ text "Load data" ]
+                ]
             ]
 
 
@@ -422,11 +431,11 @@ viewWidget { name, data } =
         [ h3 [ class "widget__title" ] [ text <| toString name ]
         , case data of
             Ok list ->
-                ul []
+                ul [ class "widget__list" ]
                     (list
                         |> List.map
                             (\item ->
-                                li []
+                                li [ class "widget__list__item" ]
                                     [ a [ href item.url ] [ text item.title ]
                                     ]
                             )
