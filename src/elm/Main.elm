@@ -23,6 +23,11 @@ type alias WidgetListItem =
     }
 
 
+type WidgetView
+    = GalleryView
+    | ListView
+
+
 type AccountType
     = Strava
     | GitHub
@@ -53,6 +58,7 @@ type WidgetType
 type alias Widget =
     { name : WidgetType
     , active : Bool
+    , view : WidgetView
     , data : Result Http.Error (List WidgetListItem)
     }
 
@@ -91,6 +97,7 @@ model =
           , widgets =
                 [ { name = GitHubRepos
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -102,6 +109,7 @@ model =
           , widgets =
                 [ { name = InstagramPosts
                   , active = True
+                  , view = GalleryView
                   , data = Ok []
                   }
                 ]
@@ -113,6 +121,7 @@ model =
           , widgets =
                 [ { name = SetlistFMattended
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -124,10 +133,12 @@ model =
           , widgets =
                 [ { name = TwitterPosts
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 , { name = TwitterSaves
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -139,10 +150,12 @@ model =
           , widgets =
                 [ { name = MedimPosts
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 , { name = MediumRecommended
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -154,18 +167,22 @@ model =
           , widgets =
                 [ { name = LastFMgetRecentTracks
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyTrackChart
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyAlbumChart
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyArtistChart
                   , active = True
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -366,12 +383,20 @@ subscriptions model =
 
 view : Model -> Html Msg
 view { accounts, name } =
-    div []
-        [ div [ class "header" ]
-            [ h1 [] [ text name ]
-            , button [ onClick LoadAllWidgetData ] [ text "reaload all" ]
-            ]
+    div [ class "main" ]
+        [ viewHeader name
         , viewAccounts accounts
+        ]
+
+
+viewHeader : String -> Html Msg
+viewHeader name =
+    div [ class "header" ]
+        [ h1 [] [ text name ]
+        , div [ class "header__actions" ]
+            [ button [ onClick LoadAllWidgetData ] [ text "reaload all" ]
+            , button [ onClick LoadAllWidgetData ] [ text "Settings" ]
+            ]
         ]
 
 
@@ -447,7 +472,7 @@ toggleButton msg active =
 
 
 viewWidget : Widget -> Html Msg
-viewWidget { name, data } =
+viewWidget { name, data, view } =
     div [ class "widget" ]
         [ div [ class "widget__content" ]
             [ div [ class "widget__title" ]
@@ -458,20 +483,49 @@ viewWidget { name, data } =
                 ]
             , case data of
                 Ok list ->
-                    ul [ class "widget__list" ]
-                        (list
-                            |> List.map
-                                (\item ->
-                                    li [ class "widget__list__item" ]
-                                        [ a [ href item.url ] [ text item.title ]
-                                        ]
-                                )
-                        )
+                    case view of
+                        GalleryView ->
+                            viewWidgetGallery list
+
+                        _ ->
+                            viewWidgetList list
 
                 _ ->
                     div [ class "alert alert--error" ] [ text "ERROR" ]
             ]
         ]
+
+
+viewWidgetList : List WidgetListItem -> Html msg
+viewWidgetList list =
+    ul [ class "widget__list" ]
+        (list
+            |> List.map
+                (\item ->
+                    li [ class "widget__list__item" ]
+                        [ a [ href item.url ] [ text item.title ]
+                        ]
+                )
+        )
+
+
+viewWidgetGallery : List WidgetListItem -> Html msg
+viewWidgetGallery list =
+    div [ class "widget__gallery" ]
+        (list
+            |> List.map
+                (\item ->
+                    a [ class "widget__gallery__item", href item.url ]
+                        [ (case item.image_url of
+                            Just url ->
+                                img [ src url, class "widget__gallery__img", height 224 ] []
+
+                            _ ->
+                                text ""
+                          )
+                        ]
+                )
+        )
 
 
 
