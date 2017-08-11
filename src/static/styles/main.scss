@@ -1,9 +1,19 @@
 @import "reset.scss";
 
+$primary: #6fc0ba;
+$secondary: #00eeee;
+
+body {
+  background-color: #000;
+  font-family: 'Inconsolata', sans-serif;
+  color: #fff;
+  font-size: 10pt;
+}
+
 * {
-  font-size: 16px;
+  font-size: inherit;
+  font-family: inherit;
   box-sizing: border-box;
-  font-family: Helvetica;
 }
 
 .account-list {
@@ -49,23 +59,65 @@
   }
 }
 
+.widget-list {
+  border: 2px solid #6fc0ba;
+  border-radius: 5px;
+  box-shadow: 0 0 2px #005b8e, inset 0 0 2px #005b8e;
+  padding: 5px 10px;
+  margin: 5px 10px;
+}
+
 .widget {
   margin: 1em;
-  padding: 1em;
-  border: 1px solid #ccc;
-  border-radius: 5px;
   max-width: 420px;
   display: inline-block;
-  height: 300px;
-  overflow-y: auto;
+  border: 2px solid $primary;
+  border-radius: 2px;
+  box-shadow: 0 0 6px #005b8e, inset 0 0 6px #005b8e;
+  padding: 3px;
+
+  &__content {
+    border: 1px solid #1b2f2d;
+  }
 
   &__title {
+    color: #fff;
+    margin: 0;
+    border-bottom: 1px solid #1b2f2d;
+    padding: 2px 12px;
+    text-transform: uppercase;
+    font-size: 12px;
+    line-height: 150%;
+  }
+
+  &__actions {
+    float: right;
+    padding-left: 20px;
+    button {
+      background: none;
+      border: none;
+      color: $secondary;
+      display: inline;
+      text-transform: uppercase;
+      padding: 0;
+    }
   }
 
   &__list {
+    padding: 2px 4px;
+    height: 230px;
+    overflow-y: auto;
   }
 
   &__list__item {
-    margin: 0.5em 0;
+    margin: 2px 0 0;
+    padding: 4px 6px;
+    color: #fff;
+    font-size: 12px;
+
+    a {
+      color: $primary;
+      text-decoration: none;
+    }
   }
 }

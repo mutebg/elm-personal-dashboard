@@ -196,7 +196,8 @@ type Msg
     | ChangeUserName AccountType String
     | ToggleWidget AccountType WidgetType
     | LoadAllWidgetData
-    | LoadWidgetData AccountType
+    | LoadAccountData AccountType
+    | LoadWidgetData WidgetType
     | SetWidgetData AccountType WidgetType (Result Http.Error (List WidgetListItem))
 
 
@@ -227,7 +228,7 @@ update msg model =
             in
                 ( model, msgs )
 
-        LoadWidgetData accountName ->
+        LoadAccountData accountName ->
             let
                 account =
                     model.accounts
@@ -245,6 +246,26 @@ update msg model =
                             [ Cmd.none ]
             in
                 ( model, Cmd.batch msgs )
+
+        LoadWidgetData widgetName ->
+            let
+                account =
+                    model.accounts
+                        |> List.filter
+                            (\acc ->
+                                List.length (List.filter (\w -> w.name == widgetName) acc.widgets) > 0
+                            )
+                        |> List.head
+
+                msg =
+                    case account of
+                        Just acc ->
+                            makeRequest acc.auth acc.name widgetName
+
+                        _ ->
+                            Cmd.none
+            in
+                ( model, msg )
 
         SetWidgetData accountName widgetName list ->
             let
@@ -394,7 +415,7 @@ viewAccount { name, active, auth, widgets } =
                     _ ->
                         text "No Implemented yet"
                 , ul [ class "account-box__list" ] (viewAccountWidgetsList name widgets)
-                , button [ onClick (LoadWidgetData name) ] [ text "Load data" ]
+                , button [ onClick (LoadAccountData name) ] [ text "Load data" ]
                 ]
             ]
 
@@ -428,21 +449,28 @@ toggleButton msg active =
 viewWidget : Widget -> Html Msg
 viewWidget { name, data } =
     div [ class "widget" ]
-        [ h3 [ class "widget__title" ] [ text <| toString name ]
-        , case data of
-            Ok list ->
-                ul [ class "widget__list" ]
-                    (list
-                        |> List.map
-                            (\item ->
-                                li [ class "widget__list__item" ]
-                                    [ a [ href item.url ] [ text item.title ]
-                                    ]
-                            )
-                    )
+        [ div [ class "widget__content" ]
+            [ div [ class "widget__title" ]
+                [ text <| toString name
+                , div [ class "widget__actions" ]
+                    [ button [ onClick (LoadWidgetData name) ] [ text "reload" ]
+                    ]
+                ]
+            , case data of
+                Ok list ->
+                    ul [ class "widget__list" ]
+                        (list
+                            |> List.map
+                                (\item ->
+                                    li [ class "widget__list__item" ]
+                                        [ a [ href item.url ] [ text item.title ]
+                                        ]
+                                )
+                        )
 
-            _ ->
-                div [ class "alert alert--error" ] [ text "ERROR" ]
+                _ ->
+                    div [ class "alert alert--error" ] [ text "ERROR" ]
+            ]
         ]
 
 
