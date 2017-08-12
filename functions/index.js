@@ -201,5 +201,45 @@ app.get("/strava/stats", (req, res) => {
   );
 });
 
+app.get("/rescuetime/daily", (req, res) => {
+  const keys = [
+    "business",
+    "communication_and_scheduling",
+    "social_networking",
+    "design_and_composition",
+    "entertainment",
+    "news",
+    "software_development",
+    "reference_and_learning",
+    "shopping",
+    "utilities"
+  ];
+
+  const url =
+    "https://www.rescuetime.com/anapi/daily_summary_feed?format=json&key=" +
+    config.rescuetime.key;
+  request({
+    json: true,
+    uri: url
+  }).then(response => {
+    res.status(201).json(
+      response.map(item => {
+        const max = keys.reduce((prev, current) => {
+          if (item[current + "_hours"] > prev) {
+            return item[current + "_hours"];
+          }
+          return prev;
+        }, 0);
+        const onePercent = 100 / max;
+        return keys.map(key => ({
+          label: key.replace(/_/g, ""),
+          formated: item[key + "_duration_formatted"],
+          percent: Math.round(item[key + "_hours"] * onePercent)
+        }));
+      })
+    );
+  });
+});
+
 // Expose the API as a function
 exports.api = functions.https.onRequest(app);
