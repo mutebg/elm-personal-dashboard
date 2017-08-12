@@ -5,6 +5,7 @@ const cors = require("cors");
 const request = require("request-promise");
 const { map, get } = require("lodash");
 const Twitter = require("twitter");
+const strava = require("strava-v3");
 
 const localConfig = require("./config.json");
 
@@ -12,6 +13,10 @@ admin.initializeApp(functions.config().firebase);
 
 const app = express();
 app.use(cors());
+app.use((req, res, next) => {
+  res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+  next();
+});
 
 //const config = functions.config().github ? functions.config() : localConfig;
 const config = localConfig;
@@ -160,6 +165,40 @@ app.get("/setlistfm/:user", (req, res) => {
       }))
     );
   });
+});
+
+app.get("/strava/activities", (req, res) => {
+  strava.athlete.listActivities(
+    { access_token: config.strava.access_token, per_page: 10 },
+    (err, payload, limits) => {
+      if (!err) {
+        res.status(201).json(
+          payload.map(item => {
+            const distance = item.distance / 1000;
+            const time = item.moving_time / 3600;
+            const speed = item.average_speed;
+            return {
+              title: item.name,
+              sub: `distance: ${distance}km | time: ${time} | speed: ${speed}`,
+              url: `https://www.strava.com/activities/${item.id}`,
+              image_url: `https://d2u2bkuhdva5j0.cloudfront.net/activities/${item.id}/a/2/300x300.png`
+            };
+          })
+        );
+      } else {
+        console.log(err);
+      }
+    }
+  );
+});
+
+app.get("/strava/stats", (req, res) => {
+  strava.athletes.stats(
+    { id: 8171123, access_token: config.strava.access_token },
+    (err, payload, limits) => {
+      res.status(201).json(payload);
+    }
+  );
 });
 
 // Expose the API as a function

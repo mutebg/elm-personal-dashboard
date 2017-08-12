@@ -45,6 +45,8 @@ type WidgetType
     | LastFMgetWeeklyAlbumChart
     | LastFMgetWeeklyArtistChart
     | SetlistFMattended
+    | StravaActivities
+    | StravaStats
 
 
 type alias Widget =
@@ -202,7 +204,13 @@ model =
           , active = True
           , auth = Token Nothing
           , url = Just "http://strava.com"
-          , widgets = []
+          , widgets =
+                [ { name = StravaActivities
+                  , active = True
+                  , view = GalleryView
+                  , data = Ok []
+                  }
+                ]
           }
         , { name = Facebook
           , active = True
@@ -600,15 +608,29 @@ viewWidgetGallery list =
         (list
             |> List.map
                 (\item ->
-                    a [ class "widget__gallery__item", href item.url, target "blank" ]
-                        [ (case item.image_url of
-                            Just url ->
-                                img [ src url, class "widget__gallery__img", height 224 ] []
+                    let
+                        imageStyle =
+                            case item.image_url of
+                                Just url ->
+                                    [ ( "backgroundImage", "url(" ++ url ++ ")" ) ]
 
-                            _ ->
-                                text ""
-                          )
-                        ]
+                                _ ->
+                                    []
+
+                        sub =
+                            case item.sub of
+                                Just sub ->
+                                    span [ class "widget__media__sub" ] [ text sub ]
+
+                                _ ->
+                                    text ""
+                    in
+                        a [ class "widget__gallery__item", href item.url, target "blank", style imageStyle ]
+                            [ span [ class "widget__gallery__content" ]
+                                [ span [ class "widget__gallery__title" ] [ text item.title ]
+                                , sub
+                                ]
+                            ]
                 )
         )
 
@@ -666,11 +688,11 @@ makeRequest auth accountName widget =
         msg =
             SetWidgetData accountName widget
 
-        -- baseUrl =
-        --     "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
         baseUrl =
-            "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
+            "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
 
+        -- baseUrl =
+        --    "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
         ( url, decoder ) =
             case widget of
                 GitHubRepos ->
@@ -705,6 +727,9 @@ makeRequest auth accountName widget =
 
                 LastFMgetWeeklyArtistChart ->
                     ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyArtistChart", standartDecoder )
+
+                StravaActivities ->
+                    ( baseUrl ++ "strava/activities", standartDecoder )
 
                 _ ->
                     ( "http://google.com", standartDecoder )
