@@ -231,11 +231,16 @@ app.get("/rescuetime/daily", (req, res) => {
           return prev;
         }, 0);
         const onePercent = 100 / max;
-        return keys.map(key => ({
+        const data = keys.map(key => ({
           label: key.replace(/_/g, ""),
           formated: item[key + "_duration_formatted"],
           percent: Math.round(item[key + "_hours"] * onePercent)
         }));
+
+        return {
+          data,
+          day: item.date
+        };
       })
     );
   });
