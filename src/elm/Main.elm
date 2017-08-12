@@ -202,7 +202,7 @@ model =
         ]
     , name = "Stoyan Delev"
     , ui =
-        { showSettings = True
+        { showSettings = False
         }
     }
 
@@ -493,7 +493,7 @@ viewAccountWidgetsList : AccountType -> List Widget -> List (Html Msg)
 viewAccountWidgetsList accountName widgets =
     List.map
         (\{ name, active } ->
-            li []
+            li [ class "account-box__list__item" ]
                 [ span []
                     [ text <| toString name ]
                 , toggleButton
@@ -506,13 +506,17 @@ viewAccountWidgetsList accountName widgets =
 
 toggleButton : Msg -> Bool -> Html Msg
 toggleButton msg active =
-    button [ onClick msg ]
-        [ text <|
+    let
+        ( label, className ) =
             if active then
-                "Deactivate"
+                ( "Deactivate", "toggle--active" )
             else
-                "Activate"
-        ]
+                ( "Activate", "" )
+    in
+        span [ class <| "toggle " ++ className, onClick msg ]
+            [ text label
+            , span [ class "toggle__symbol" ] [ text "" ]
+            ]
 
 
 viewWidget : Widget -> Html Msg

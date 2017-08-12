@@ -66,16 +66,24 @@ body {
 
 .account-box {
   padding: 1em;
+  border-bottom: 1px solid #1b2f2d;
 
   // button {
   //   display: none; //@TODO temporary
   // }
 
   &__header {
+    text-transform: uppercase;
+    margin-bottom: 10px;
+
+    .toggle {
+      float: right;
+    }
   }
 
   &__content {
     display: none;
+    padding-bottom: 5px;
     .account-box--active & {
       display: block;
     }
@@ -83,17 +91,28 @@ body {
 
   &__title {
     margin: 0;
+    display: inline;
+    font-size: 16px;
   }
 
   &__input {
     padding: 0.5em;
     width: 100%;
+    background: none;
+    border: 1px solid $primary;
+    color: $secondary;
   }
 
   &__list {
+    margin: 10px 0;
   }
 
   &__list__item {
+    padding: 7px 0;
+
+    .toggle {
+      float: right;
+    }
   }
 }
 
@@ -186,5 +205,34 @@ body {
     display: block;
     filter: hue-rotate(90deg);
     opacity: 0.7;
+  }
+}
+
+.toggle {
+  text-align: right;
+  display: inline-block;
+  line-height: 14px;
+  color: $primary;
+
+  &--active {
+    color: $secondary;
+  }
+
+  &--deactive {
+  }
+
+  &__symbol {
+    width: 14px;
+    height: 14px;
+    //background: $primary;
+    border-radius: 50%;
+    display: inline-block;
+    float: right;
+    border: 2px solid $secondary;
+    margin-left: 4px;
+
+    .toggle--active & {
+      background: $secondary;
+    }
   }
 }
