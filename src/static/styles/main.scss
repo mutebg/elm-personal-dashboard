@@ -166,5 +166,7 @@ body {
 
   &__gallery__img {
     display: block;
+    filter: hue-rotate(90deg);
+    opacity: 0.7;
   }
 }
