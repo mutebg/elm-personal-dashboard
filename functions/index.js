@@ -150,7 +150,7 @@ app.get("/setlistfm/:user", (req, res) => {
     uri: `https://api.setlist.fm/rest/1.0/user/${req.params.user}/attended`,
     headers: {
       Accept: "application/json",
-      "x-api-key": "86874426-b5a7-457b-8151-52d3da4e36f1"
+      "x-api-key": config.setlistfm.apikey
     }
   }).then(response => {
     res.status(201).json(
