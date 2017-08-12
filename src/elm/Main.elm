@@ -20,12 +20,14 @@ type alias WidgetListItem =
     { title : String
     , url : String
     , image_url : Maybe String
+    , sub : Maybe String
     }
 
 
 type WidgetView
     = GalleryView
     | ListView
+    | MediaView
 
 
 type WidgetType
@@ -147,7 +149,7 @@ model =
                   }
                 , { name = TwitterSaves
                   , active = True
-                  , view = ListView
+                  , view = MediaView
                   , data = Ok []
                   }
                 ]
@@ -176,12 +178,12 @@ model =
           , widgets =
                 [ { name = LastFMgetRecentTracks
                   , active = True
-                  , view = ListView
+                  , view = MediaView
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyTrackChart
                   , active = True
-                  , view = ListView
+                  , view = MediaView
                   , data = Ok []
                   }
                 , { name = LastFMgetWeeklyAlbumChart
@@ -567,6 +569,9 @@ viewWidget { name, data, view } =
                         GalleryView ->
                             viewWidgetGallery list
 
+                        MediaView ->
+                            viewWidgetMedia list
+
                         _ ->
                             viewWidgetList list
 
@@ -583,7 +588,7 @@ viewWidgetList list =
             |> List.map
                 (\item ->
                     li [ class "widget__list__item" ]
-                        [ a [ href item.url ] [ text item.title ]
+                        [ a [ href item.url, target "blank" ] [ text item.title ]
                         ]
                 )
         )
@@ -595,7 +600,7 @@ viewWidgetGallery list =
         (list
             |> List.map
                 (\item ->
-                    a [ class "widget__gallery__item", href item.url ]
+                    a [ class "widget__gallery__item", href item.url, target "blank" ]
                         [ (case item.image_url of
                             Just url ->
                                 img [ src url, class "widget__gallery__img", height 224 ] []
@@ -604,6 +609,38 @@ viewWidgetGallery list =
                                 text ""
                           )
                         ]
+                )
+        )
+
+
+viewWidgetMedia : List WidgetListItem -> Html msg
+viewWidgetMedia list =
+    div [ class "widget__media" ]
+        (list
+            |> List.map
+                (\item ->
+                    let
+                        thumb =
+                            case item.image_url of
+                                Just url ->
+                                    img [ src url, class "widget__media__img" ] []
+
+                                _ ->
+                                    text ""
+
+                        sub =
+                            case item.sub of
+                                Just sub ->
+                                    span [ class "widget__media__sub" ] [ text sub ]
+
+                                _ ->
+                                    text ""
+                    in
+                        a [ class "widget__media__item", href item.url, target "blank" ]
+                            [ thumb
+                            , span [ class "widget__media__title" ] [ text item.title ]
+                            , sub
+                            ]
                 )
         )
 
@@ -629,6 +666,8 @@ makeRequest auth accountName widget =
         msg =
             SetWidgetData accountName widget
 
+        -- baseUrl =
+        --     "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
         baseUrl =
             "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
 
@@ -695,3 +734,4 @@ standarItemDecoder =
         |> DecodePipe.required "title" Decode.string
         |> DecodePipe.required "url" Decode.string
         |> DecodePipe.optional "image_url" (Decode.nullable Decode.string) Nothing
+        |> DecodePipe.optional "sub" (Decode.nullable Decode.string) Nothing

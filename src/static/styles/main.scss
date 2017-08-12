@@ -16,6 +16,10 @@ body {
   box-sizing: border-box;
 }
 
+a {
+  text-decoration: none;
+}
+
 .lp {
   border: 2px solid #6fc0ba;
   border-radius: 5px;
@@ -205,6 +209,37 @@ body {
     display: block;
     filter: hue-rotate(90deg);
     opacity: 0.7;
+  }
+
+  &__media {
+    padding: 2px 4px;
+    height: 230px;
+    overflow-y: auto;
+
+    &__item {
+      padding: 4px 6px;
+      display: block;
+      height: 48px;
+    }
+
+    &__img {
+      height: 40px;
+      width: 40px;
+      float: left;
+      margin-right: 4px;
+    }
+
+    &__title,
+    &__sub {
+      color: $primary;
+      display: block;
+    }
+
+    &__title {
+    }
+
+    &__sub {
+    }
   }
 }
 

@@ -78,7 +78,8 @@ app.get("/twitter/:user/:type", (req, res) => {
         tweets
           .map(t => ({
             title: t.text,
-            url: `https://twitter.com/${t.user.screen_name}/status/${t.id_str}`
+            url: `https://twitter.com/${t.user.screen_name}/status/${t.id_str}`,
+            image_url: t.user.profile_image_url
           }))
           .slice(0, 10)
       );
@@ -92,8 +93,10 @@ app.get("/lastfm/:user/:type", (req, res) => {
 
   let key = [];
   let fn = track => ({
-    title: track.artist["#text"] + " - " + track.name,
-    url: track.url
+    title: track.artist["#text"],
+    sub: track.name,
+    url: track.url,
+    image_url: get(track, ["image", "0", "#text"])
   });
   switch (req.params.type) {
     case "getRecentTracks":
