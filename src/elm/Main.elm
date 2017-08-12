@@ -28,16 +28,6 @@ type WidgetView
     | ListView
 
 
-type AccountType
-    = Strava
-    | GitHub
-    | Medium
-    | LastFM
-    | Twitter
-    | Instagram
-    | SetlistFM
-
-
 type WidgetType
     = GitHubRepos
     | MedimPosts
@@ -63,6 +53,16 @@ type alias Widget =
     }
 
 
+type AccountType
+    = Strava
+    | GitHub
+    | Medium
+    | LastFM
+    | Twitter
+    | Instagram
+    | SetlistFM
+
+
 type Auth
     = Token (Maybe String)
     | Username String
@@ -77,14 +77,20 @@ type alias Account =
     }
 
 
-
--- MODEL
+type alias UI =
+    { showSettings : Bool
+    }
 
 
 type alias Model =
     { accounts : List Account
     , name : String
+    , ui : UI
     }
+
+
+
+-- MODEL
 
 
 model : Model
@@ -195,6 +201,9 @@ model =
           }
         ]
     , name = "Stoyan Delev"
+    , ui =
+        { showSettings = True
+        }
     }
 
 
@@ -216,6 +225,7 @@ type Msg
     | LoadAccountData AccountType
     | LoadWidgetData WidgetType
     | SetWidgetData AccountType WidgetType (Result Http.Error (List WidgetListItem))
+    | ToogleSettings
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -290,6 +300,16 @@ update msg model =
                     updateWidgetData list widgetName
             in
                 ( { model | accounts = findAndUpdateAccount model.accounts accountName localUpdateWidgets }, Cmd.none )
+
+        ToogleSettings ->
+            let
+                current =
+                    model.ui
+
+                ui =
+                    { current | showSettings = not current.showSettings }
+            in
+                ( { model | ui = ui }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -382,37 +402,61 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view { accounts, name } =
-    div [ class "main" ]
-        [ viewHeader name
-        , viewAccounts accounts
-        ]
+view { accounts, name, ui } =
+    let
+        showSettingsClass =
+            "main"
+                ++ (if ui.showSettings then
+                        " main--open"
+                    else
+                        ""
+                   )
+    in
+        div [ class showSettingsClass ]
+            [ div [ class "dashboard lp" ]
+                [ viewHeader name ui
+                , viewDashboard accounts
+                ]
+            , div
+                [ class "settings lp" ]
+                [ viewSettingsList accounts
+                ]
+            ]
 
 
-viewHeader : String -> Html Msg
-viewHeader name =
+viewHeader : String -> UI -> Html Msg
+viewHeader name ui =
     div [ class "header" ]
         [ h1 [] [ text name ]
         , div [ class "header__actions" ]
-            [ button [ onClick LoadAllWidgetData ] [ text "reaload all" ]
-            , button [ onClick LoadAllWidgetData ] [ text "Settings" ]
+            [ button [ onClick LoadAllWidgetData ] [ text "Reaload all" ]
+            , button [ onClick ToogleSettings ]
+                [ text
+                    (if ui.showSettings then
+                        "CLOSE Settings"
+                     else
+                        "OPEN Settings"
+                    )
+                ]
             ]
         ]
 
 
-viewAccounts : List Account -> Html Msg
-viewAccounts accoutns =
-    div []
-        [ div [ class "account-list" ]
-            (List.map viewAccount accoutns)
-        , div
-            [ class "widget-list" ]
-            (accoutns
-                |> List.filter (\a -> a.active)
-                |> List.concatMap (\a -> List.filter (\b -> b.active) a.widgets)
-                |> List.map viewWidget
-            )
-        ]
+viewDashboard : List Account -> Html Msg
+viewDashboard accounts =
+    div
+        [ class "widget-list" ]
+        (accounts
+            |> List.filter (\a -> a.active)
+            |> List.concatMap (\a -> List.filter (\b -> b.active) a.widgets)
+            |> List.map viewWidget
+        )
+
+
+viewSettingsList : List Account -> Html Msg
+viewSettingsList accounts =
+    div [ class "account-list" ]
+        (List.map viewAccount accounts)
 
 
 viewAccount : Account -> Html Msg

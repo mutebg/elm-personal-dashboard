@@ -16,14 +16,18 @@ body {
   box-sizing: border-box;
 }
 
-.main {
+.lp {
   border: 2px solid #6fc0ba;
   border-radius: 5px;
   box-shadow: 0 0 2px #005b8e, inset 0 0 2px #005b8e;
-  padding: 5px 0;
-  margin: 5px 10px;
-  height: calc(100vh - 20px);
-  overflow: scroll;
+}
+
+.main {
+  transition: 0.2s linear transform;
+
+  &--open {
+    transform: translate3d(-330px, 0, 0);
+  }
 
   button {
     background: none;
@@ -58,14 +62,6 @@ body {
 }
 
 .account-list {
-  width: 300px;
-  height: 100vh;
-  position: fixed;
-  right: 0;
-  top: 0;
-  background: #ccc;
-  overflow: auto;
-  display: none;
 }
 
 .account-box {
@@ -99,6 +95,28 @@ body {
 
   &__list__item {
   }
+}
+
+.dashboard,
+.settings {
+  padding: 5px 0;
+  margin: 5px 10px;
+  height: calc(100vh - 20px);
+}
+
+.settings {
+  width: 300px;
+  position: fixed;
+  left: 100%;
+  top: -5px;
+  bottom: 5px;
+  background: #000;
+  overflow: auto;
+}
+
+.widget-list {
+  height: calc(100% - 40px);
+  overflow: scroll;
 }
 
 .widget {
