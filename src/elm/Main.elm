@@ -54,13 +54,16 @@ type alias Widget =
 
 
 type AccountType
-    = Strava
-    | GitHub
+    = GitHub
     | Medium
     | LastFM
     | Twitter
     | Instagram
     | SetlistFM
+    | Strava
+    | RescueTime
+    | Facebook
+    | Goodreads
 
 
 type Auth
@@ -199,6 +202,24 @@ model =
           , url = Just "http://strava.com"
           , widgets = []
           }
+        , { name = Facebook
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://facebook.com"
+          , widgets = []
+          }
+        , { name = RescueTime
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://rescuetime.com"
+          , widgets = []
+          }
+        , { name = Goodreads
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://goodreads.com"
+          , widgets = []
+          }
         ]
     , name = "Stoyan Delev"
     , ui =
@@ -226,6 +247,7 @@ type Msg
     | LoadWidgetData WidgetType
     | SetWidgetData AccountType WidgetType (Result Http.Error (List WidgetListItem))
     | ToogleSettings
+    | ChangeName String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -310,6 +332,9 @@ update msg model =
                     { current | showSettings = not current.showSettings }
             in
                 ( { model | ui = ui }, Cmd.none )
+
+        ChangeName name ->
+            ( { model | name = name }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -419,7 +444,14 @@ view { accounts, name, ui } =
                 ]
             , div
                 [ class "settings lp" ]
-                [ viewSettingsList accounts
+                [ div [ class ("account-box account-box--active") ]
+                    [ div [ class "account-box__header" ]
+                        [ h2 [ class "account-box__title" ] [ text "Name" ] ]
+                    , div [ class "account-box__content" ]
+                        [ input [ class "account-box__input", value name, onInput ChangeName ] []
+                        ]
+                    ]
+                , viewSettingsList accounts
                 ]
             ]
 
@@ -598,7 +630,7 @@ makeRequest auth accountName widget =
             SetWidgetData accountName widget
 
         baseUrl =
-            "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
+            "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
 
         ( url, decoder ) =
             case widget of

@@ -13,7 +13,8 @@ admin.initializeApp(functions.config().firebase);
 const app = express();
 app.use(cors());
 
-const config = functions.config().github ? functions.config() : localConfig;
+//const config = functions.config().github ? functions.config() : localConfig;
+const config = localConfig;
 
 const mediumData = (user, type) =>
   request({
