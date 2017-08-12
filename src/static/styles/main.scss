@@ -261,6 +261,48 @@ a {
     &__sub {
     }
   }
+
+  &__graph {
+    overflow-x: auto;
+    white-space: nowrap;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+
+    &__item {
+      flex: 1;
+      position: relative;
+      white-space: normal;
+      border: 1px solid #6fc0ba;
+      margin: 0 5px;
+      min-width: 280px;
+      min-height: 230px;
+      background: no-repeat center center;
+      background-size: cover;
+      align-items: flex-end;
+      padding: 4px 8px 0 8px;
+    }
+
+    &__title {
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    &__row {
+      width: 100%;
+      margin-bottom: 7px;
+    }
+
+    &__label {
+      padding-bottom: 2px;
+      font-size: 12px;
+    }
+
+    &__value {
+      height: 4px;
+      background: $primary;
+    }
+  }
 }
 
 .toggle {

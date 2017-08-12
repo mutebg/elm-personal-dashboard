@@ -16,11 +16,18 @@ main =
     Html.program { init = init, view = view, update = update, subscriptions = subscriptions }
 
 
+type alias GraphData =
+    { label : String
+    , value : Int
+    }
+
+
 type alias WidgetListItem =
     { title : String
     , url : String
     , image_url : Maybe String
     , sub : Maybe String
+    , graph : Maybe (List GraphData)
     }
 
 
@@ -28,6 +35,7 @@ type WidgetView
     = GalleryView
     | ListView
     | MediaView
+    | GraphView
 
 
 type WidgetType
@@ -47,6 +55,7 @@ type WidgetType
     | SetlistFMattended
     | StravaActivities
     | StravaStats
+    | RescuetimeDaily
 
 
 type alias Widget =
@@ -222,7 +231,13 @@ model =
           , active = True
           , auth = Token Nothing
           , url = Just "http://rescuetime.com"
-          , widgets = []
+          , widgets =
+                [ { name = RescuetimeDaily
+                  , active = True
+                  , view = GraphView
+                  , data = Ok []
+                  }
+                ]
           }
         , { name = Goodreads
           , active = True
@@ -580,6 +595,9 @@ viewWidget { name, data, view } =
                         MediaView ->
                             viewWidgetMedia list
 
+                        GraphView ->
+                            viewWidgetGraph list
+
                         _ ->
                             viewWidgetList list
 
@@ -606,46 +624,82 @@ viewWidgetGallery : List WidgetListItem -> Html msg
 viewWidgetGallery list =
     div [ class "widget__gallery" ]
         (list
-            |> List.map
-                (\item ->
-                    let
-                        imageStyle =
-                            case item.image_url of
-                                Just url ->
-                                    [ ( "backgroundImage", "url(" ++ url ++ ")" ) ]
-
-                                _ ->
-                                    []
-
-                        sub =
-                            case item.sub of
-                                Just sub ->
-                                    span [ class "widget__media__sub" ] [ text sub ]
-
-                                _ ->
-                                    text ""
-                    in
-                        a [ class "widget__gallery__item", href item.url, target "blank", style imageStyle ]
-                            [ span [ class "widget__gallery__content" ]
-                                [ span [ class "widget__gallery__title" ] [ text item.title ]
-                                , sub
-                                ]
-                            ]
-                )
+            |> List.map viewWidgetGalleryItem
         )
+
+
+viewWidgetGalleryItem : WidgetListItem -> Html msg
+viewWidgetGalleryItem item =
+    let
+        imageStyle =
+            case item.image_url of
+                Just url ->
+                    [ ( "backgroundImage", "url(" ++ url ++ ")" ) ]
+
+                _ ->
+                    []
+
+        sub =
+            case item.sub of
+                Just sub ->
+                    span [ class "widget__media__sub" ] [ text sub ]
+
+                _ ->
+                    text ""
+    in
+        a [ class "widget__gallery__item", href item.url, target "blank", style imageStyle ]
+            [ span [ class "widget__gallery__content" ]
+                [ span [ class "widget__gallery__title" ] [ text item.title ]
+                , sub
+                ]
+            ]
 
 
 viewWidgetMedia : List WidgetListItem -> Html msg
 viewWidgetMedia list =
     div [ class "widget__media" ]
         (list
+            |> List.map viewWidgetMediaItem
+        )
+
+
+viewWidgetMediaItem : WidgetListItem -> Html msg
+viewWidgetMediaItem item =
+    let
+        thumb =
+            case item.image_url of
+                Just url ->
+                    img [ src url, class "widget__media__img" ] []
+
+                _ ->
+                    text ""
+
+        sub =
+            case item.sub of
+                Just sub ->
+                    span [ class "widget__media__sub" ] [ text sub ]
+
+                _ ->
+                    text ""
+    in
+        a [ class "widget__media__item", href item.url, target "blank" ]
+            [ thumb
+            , span [ class "widget__media__title" ] [ text item.title ]
+            , sub
+            ]
+
+
+viewWidgetGraph : List WidgetListItem -> Html msg
+viewWidgetGraph list =
+    div [ class "widget__graph" ]
+        (list
             |> List.map
                 (\item ->
                     let
-                        thumb =
-                            case item.image_url of
-                                Just url ->
-                                    img [ src url, class "widget__media__img" ] []
+                        graphs =
+                            case item.graph of
+                                Just data ->
+                                    viewWidgetGraphItem data
 
                                 _ ->
                                     text ""
@@ -653,17 +707,33 @@ viewWidgetMedia list =
                         sub =
                             case item.sub of
                                 Just sub ->
-                                    span [ class "widget__media__sub" ] [ text sub ]
+                                    sub
 
                                 _ ->
-                                    text ""
+                                    ""
+
+                        title =
+                            "Date: " ++ item.title ++ ", Total time: " ++ sub
                     in
-                        a [ class "widget__media__item", href item.url, target "blank" ]
-                            [ thumb
-                            , span [ class "widget__media__title" ] [ text item.title ]
-                            , sub
+                        div [ class "widget__graph__item" ]
+                            [ div [ class "widget__graph__title" ] [ text title ]
+                            , graphs
                             ]
                 )
+        )
+
+
+viewWidgetGraphItem : List GraphData -> Html msg
+viewWidgetGraphItem list =
+    div []
+        (List.map
+            (\item ->
+                div [ class "widget__graph__row" ]
+                    [ div [ class "widget__graph__label" ] [ text item.label ]
+                    , div [ class "widget__graph__value", style [ ( "width", toString (item.value) ++ "%" ) ] ] [ text "" ]
+                    ]
+            )
+            list
         )
 
 
@@ -693,43 +763,46 @@ makeRequest auth accountName widget =
 
         -- baseUrl =
         --    "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
-        ( url, decoder ) =
+        ( path, decoder ) =
             case widget of
                 GitHubRepos ->
-                    ( baseUrl ++ "github/" ++ id ++ "/repos", standartDecoder )
+                    ( "github/" ++ id ++ "/repos", standartDecoder )
 
                 InstagramPosts ->
-                    ( baseUrl ++ "instagram/" ++ id ++ "/recent", standartDecoder )
+                    ( "instagram/" ++ id ++ "/recent", standartDecoder )
 
                 SetlistFMattended ->
-                    ( baseUrl ++ "setlistfm/" ++ id, standartDecoder )
+                    ( "setlistfm/" ++ id, standartDecoder )
 
                 TwitterPosts ->
-                    ( baseUrl ++ "twitter/" ++ id ++ "/list", standartDecoder )
+                    ( "twitter/" ++ id ++ "/list", standartDecoder )
 
                 TwitterSaves ->
-                    ( baseUrl ++ "twitter/" ++ id ++ "/favorites", standartDecoder )
+                    ( "twitter/" ++ id ++ "/favorites", standartDecoder )
 
                 MedimPosts ->
-                    ( baseUrl ++ "medium/" ++ id ++ "/latest", standartDecoder )
+                    ( "medium/" ++ id ++ "/latest", standartDecoder )
 
                 MediumRecommended ->
-                    ( baseUrl ++ "medium/" ++ id ++ "/has-recommended", standartDecoder )
+                    ( "medium/" ++ id ++ "/has-recommended", standartDecoder )
 
                 LastFMgetRecentTracks ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getRecentTracks", standartDecoder )
+                    ( "lastfm/" ++ id ++ "/getRecentTracks", standartDecoder )
 
                 LastFMgetWeeklyTrackChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyTrackChart", standartDecoder )
+                    ( "lastfm/" ++ id ++ "/getWeeklyTrackChart", standartDecoder )
 
                 LastFMgetWeeklyAlbumChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyAlbumChart", standartDecoder )
+                    ( "lastfm/" ++ id ++ "/getWeeklyAlbumChart", standartDecoder )
 
                 LastFMgetWeeklyArtistChart ->
-                    ( baseUrl ++ "lastfm/" ++ id ++ "/getWeeklyArtistChart", standartDecoder )
+                    ( "lastfm/" ++ id ++ "/getWeeklyArtistChart", standartDecoder )
 
                 StravaActivities ->
-                    ( baseUrl ++ "strava/activities", standartDecoder )
+                    ( "strava/activities", standartDecoder )
+
+                RescuetimeDaily ->
+                    ( "rescuetime/daily", standartDecoder )
 
                 _ ->
                     ( "http://google.com", standartDecoder )
@@ -738,7 +811,7 @@ makeRequest auth accountName widget =
             Http.request
                 { method = "GET"
                 , body = Http.emptyBody
-                , url = url
+                , url = baseUrl ++ path
                 , expect = Http.expectJson decoder
                 , headers = []
                 , timeout = Nothing
@@ -760,3 +833,16 @@ standarItemDecoder =
         |> DecodePipe.required "url" Decode.string
         |> DecodePipe.optional "image_url" (Decode.nullable Decode.string) Nothing
         |> DecodePipe.optional "sub" (Decode.nullable Decode.string) Nothing
+        |> DecodePipe.optional "data" (Decode.nullable graphDecoder) Nothing
+
+
+graphDecoder : Decode.Decoder (List GraphData)
+graphDecoder =
+    Decode.list graphItemDecoder
+
+
+graphItemDecoder : Decode.Decoder GraphData
+graphItemDecoder =
+    DecodePipe.decode GraphData
+        |> DecodePipe.required "label" Decode.string
+        |> DecodePipe.required "value" Decode.int

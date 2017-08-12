@@ -203,7 +203,6 @@ app.get("/strava/stats", (req, res) => {
 
 app.get("/rescuetime/daily", (req, res) => {
   const keys = [
-    "business",
     "communication_and_scheduling",
     "social_networking",
     "design_and_composition",
@@ -211,7 +210,6 @@ app.get("/rescuetime/daily", (req, res) => {
     "news",
     "software_development",
     "reference_and_learning",
-    "shopping",
     "utilities"
   ];
 
@@ -232,14 +230,15 @@ app.get("/rescuetime/daily", (req, res) => {
         }, 0);
         const onePercent = 100 / max;
         const data = keys.map(key => ({
-          label: key.replace(/_/g, ""),
-          formated: item[key + "_duration_formatted"],
-          percent: Math.round(item[key + "_hours"] * onePercent)
+          label: key.replace(/_/g, " "),
+          value: Math.round(item[key + "_hours"] * onePercent)
         }));
 
         return {
-          data,
-          day: item.date
+          title: item.date,
+          url: "",
+          sub: item.total_duration_formatted,
+          data
         };
       })
     );
