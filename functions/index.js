@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
 const request = require("request-promise");
-const { map, get } = require("lodash");
+const { map, get, round } = require("lodash");
 const Twitter = require("twitter");
 const strava = require("strava-v3");
 
@@ -14,7 +14,7 @@ admin.initializeApp(functions.config().firebase);
 const app = express();
 app.use(cors());
 app.use((req, res, next) => {
-  res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+  res.set("Cache-Control", "public, max-age=3000, s-maxage=6000");
   next();
 });
 
@@ -112,6 +112,10 @@ app.get("/lastfm/:user/:type", (req, res) => {
       break;
     case "getWeeklyAlbumChart":
       key = ["weeklyalbumchart", "album"];
+      fn = album => ({
+        title: album.name + " by " + album.artist["#text"],
+        url: album.url
+      });
       break;
     case "getWeeklyArtistChart":
       key = ["weeklyartistchart", "artist"];
@@ -174,12 +178,14 @@ app.get("/strava/activities", (req, res) => {
       if (!err) {
         res.status(201).json(
           payload.map(item => {
-            const distance = item.distance / 1000;
-            const time = item.moving_time / 3600;
-            const speed = item.average_speed;
+            const date = new Date(null);
+            date.setSeconds(item.moving_time); // specify value for SECONDS here
+            const distance = round(item.distance / 1000, 2);
+            const time = date.toISOString().substr(11, 8);
+            const speed = round(item.average_speed * 3.6, 2);
             return {
               title: item.name,
-              sub: `distance: ${distance}km | time: ${time} | speed: ${speed}`,
+              sub: `distance: ${distance} km | time: ${time} | speed: ${speed} km/h`,
               url: `https://www.strava.com/activities/${item.id}`,
               image_url: `https://d2u2bkuhdva5j0.cloudfront.net/activities/${item.id}/a/2/300x300.png`
             };

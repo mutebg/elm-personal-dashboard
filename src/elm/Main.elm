@@ -136,18 +136,6 @@ model =
                   }
                 ]
           }
-        , { name = SetlistFM
-          , active = True
-          , auth = Username "fb:1243029572"
-          , url = Nothing
-          , widgets =
-                [ { name = SetlistFMattended
-                  , active = True
-                  , view = ListView
-                  , data = Ok []
-                  }
-                ]
-          }
         , { name = Twitter
           , active = True
           , auth = Username "mutebg"
@@ -182,6 +170,36 @@ model =
                   }
                 ]
           }
+        , { name = Strava
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://strava.com"
+          , widgets =
+                [ { name = StravaActivities
+                  , active = True
+                  , view = GalleryView
+                  , data = Ok []
+                  }
+                ]
+          }
+        , { name = Facebook
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://facebook.com"
+          , widgets = []
+          }
+        , { name = RescueTime
+          , active = True
+          , auth = Token Nothing
+          , url = Just "http://rescuetime.com"
+          , widgets =
+                [ { name = RescuetimeDaily
+                  , active = True
+                  , view = GraphView
+                  , data = Ok []
+                  }
+                ]
+          }
         , { name = LastFM
           , active = True
           , auth = Username "mutebg"
@@ -209,32 +227,14 @@ model =
                   }
                 ]
           }
-        , { name = Strava
+        , { name = SetlistFM
           , active = True
-          , auth = Token Nothing
-          , url = Just "http://strava.com"
+          , auth = Username "fb:1243029572"
+          , url = Nothing
           , widgets =
-                [ { name = StravaActivities
+                [ { name = SetlistFMattended
                   , active = True
-                  , view = GalleryView
-                  , data = Ok []
-                  }
-                ]
-          }
-        , { name = Facebook
-          , active = True
-          , auth = Token Nothing
-          , url = Just "http://facebook.com"
-          , widgets = []
-          }
-        , { name = RescueTime
-          , active = True
-          , auth = Token Nothing
-          , url = Just "http://rescuetime.com"
-          , widgets =
-                [ { name = RescuetimeDaily
-                  , active = True
-                  , view = GraphView
+                  , view = ListView
                   , data = Ok []
                   }
                 ]
@@ -758,11 +758,11 @@ makeRequest auth accountName widget =
         msg =
             SetWidgetData accountName widget
 
-        baseUrl =
-            "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
-
         -- baseUrl =
-        --    "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
+        --     "http://localhost:5002/personal-dashboard-ebee0/us-central1/api/"
+        baseUrl =
+            "https://us-central1-personal-dashboard-ebee0.cloudfunctions.net/api/"
+
         ( path, decoder ) =
             case widget of
                 GitHubRepos ->
